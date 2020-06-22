@@ -18,10 +18,6 @@ mycursor = mydb.cursor()
 ## class MainWindow:
 Ui_MainWindow, QtBaseClass = uic.loadUiType("mainwindow.ui")
 
-data = {'col1':['1','2','3','4'],
-        'col2':['1','2','1','3'],
-        'col3':['1','1','2','1']}
-
 class Socio:
     @staticmethod
     def get_all_ids():
