@@ -19,11 +19,28 @@ mycursor = mydb.cursor()
 Ui_MainWindow, QtBaseClass = uic.loadUiType("mainwindow.ui")
 
 class Socio:
+    def __init__(self, id, nome):
+        self.id = id
+        self.nome = nome
+  
+    def get_id(self):
+        return self.id
+  
+    def set_id(self, id):
+        self.id = id
+  
+    def get_nome(self):
+        return self.nome
+
+    def set_nome(self, nome):
+        self.nome = nome
+
+class SocioDAO:
     @staticmethod
-    def get_all_ids():
+    def get_socios():
         mycursor.execute('SELECT idSocio, nome as id_socio FROM Socio')
         results = mycursor.fetchall()
-        return [str(x[0]) for x in results], [str(x[1]) for x in results]
+        return [Socio(str(x[0]),str(x[1])) for x in results]
 
 class Reserva:
     def __init__(self):
@@ -56,8 +73,9 @@ class Dialog(QDialog):
 
         self.selecionado_value = None
 
-        socios = Socio.get_all_ids()
-        self.socios = dict(zip(socios[0], socios[1]))
+        _socios = SocioDAO.get_socios()
+        socios = [(socio.get_id(),socio.get_nome()) for socio in _socios]
+        self.socios = dict(socios)
         self.id_lineedit.textChanged.connect(self.changed_ids)
 
     def submit(self):
@@ -112,7 +130,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.remove_button.setEnabled(toggle)
         self.adiciona_button.setEnabled(toggle)
         self.limpa_button.setEnabled(toggle)
-
 
     def render_data(self):
         self.socios_tabela.setRowCount(0)
