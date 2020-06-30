@@ -20,48 +20,89 @@ Ui_MainWindow, QtBaseClass = uic.loadUiType("mainwindow.ui")
 
 class Socio:
     def __init__(self, id, nome):
-        self.id = id
-        self.nome = nome
+        self.set_id(id)
+        self.set_nome(nome)
   
     def get_id(self):
         return self.id
   
     def set_id(self, id):
-        self.id = id
+        self.id = str(id)
   
     def get_nome(self):
         return self.nome
 
     def set_nome(self, nome):
-        self.nome = nome
+        self.nome = str(nome)
 
 class SocioDAO:
-    @staticmethod
-    def get_socios():
+    def get_socios(self):
         mycursor.execute('SELECT idSocio, nome as id_socio FROM Socio')
         results = mycursor.fetchall()
         return [Socio(str(x[0]),str(x[1])) for x in results]
 
 class Reserva:
-    def __init__(self):
-        pass
+    def __init__(self, id, id_socio, nome, numero_sala, horario):
+        self.set_id(id)
+        self.set_id_socio(id_socio)
+        self.set_nome(nome)
+        self.set_numero_sala(numero_sala)
+        self.set_horario(horario)
 
-    @staticmethod
-    def get_all():
+    def get_id(self):
+        return self.id
+
+    def get_id_socio(self):
+        return self.id_socio
+    
+    def get_nome(self):
+        return self.nome
+
+    def get_numero_sala(self):
+        return self.numero_sala
+    
+    def get_horario(self):
+        return self.horario
+
+    def set_id(self,id):
+        self.id = str(id)
+    
+    def set_id_socio(self, id_socio):
+        self.id_socio = str(id_socio)
+    
+    def set_nome(self, nome):
+        self.nome = str(nome)
+
+    def set_numero_sala(self, numero_sala):
+        self.numero_sala = str(numero_sala)
+    
+    def set_horario(self, horario):
+        self.horario = str(horario)
+
+class ReservaDAO:
+    def get_reservas(self):
         mycursor.execute('SELECT r.idReserva, s.idSocio, s.nome , r.numero_sala , DATE_FORMAT(data_hora, \'%d/%m/%y %h:00\') as horario FROM Reserva r INNER JOIN Socio s ON r.socio_id = s.idSocio ORDER BY r.data_hora DESC LIMIT 100')
-        results = mycursor.fetchall()
-        return results
+        _reservas = mycursor.fetchall()
+        reservas = []
+        for _reserva in _reservas:
+            id, id_socio, nome, numero_sala, horario = _reserva
+            reserva = Reserva(id, id_socio, nome, numero_sala, horario)
+            reservas.append(reserva)
+        return reservas
 
-    @staticmethod
-    def remove(ids):
+    def delete_reservas(self, ids):
         mycursor.execute('DELETE from Reserva WHERE idReserva IN '+ids)
 
-    @staticmethod
-    def get_by_name(name):
+    def get_by_nome_socio(self, name):
         mycursor.execute('SELECT r.idReserva, s.idSocio, s.nome , r.numero_sala , DATE_FORMAT(r.data_hora, \'%d/%m/%y %h:00\') as horario FROM Reserva r \
                             INNER JOIN Socio s ON r.socio_id = s.idSocio WHERE s.nome LIKE "%{}%"'.format(name))
-        results = mycursor.fetchall()
-        return results
+        _reservas = mycursor.fetchall()
+        reservas = []
+        for _reserva in _reservas:
+            id, id_socio, nome, numero_sala, horario = _reserva
+            reserva = Reserva(id, id_socio, nome, numero_sala, horario)
+            reservas.append(reserva)
+        return reservas
 
 class Dialog(QDialog):
     def __init__(self):
@@ -73,7 +114,7 @@ class Dialog(QDialog):
 
         self.selecionado_value = None
 
-        _socios = SocioDAO.get_socios()
+        _socios = SocioDAO().get_socios()
         socios = [(socio.get_id(),socio.get_nome()) for socio in _socios]
         self.socios = dict(socios)
         self.id_lineedit.textChanged.connect(self.changed_ids)
@@ -115,9 +156,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def query_results(self):
         self.toggle_buttons(False)
         if self.pesquisa is None:
-            self.data = Reserva.get_all()
+            self.data = ReservaDAO().get_reservas()
         else:
-            self.data = Reserva.get_by_name(self.pesquisa)
+            self.data = ReservaDAO().get_by_nome_socio(self.pesquisa)
         self.render_data()
         self.toggle_buttons(True)
 
@@ -133,10 +174,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def render_data(self):
         self.socios_tabela.setRowCount(0)
-        for i, x in enumerate(self.data):
+        for i, reserva in enumerate(self.data):
             self.socios_tabela.insertRow(i)
-            for j in range(len(x)):
-                self.socios_tabela.setItem(i, j, QTableWidgetItem(str(x[j])))
+            
+            self.socios_tabela.setItem(i, 0, QTableWidgetItem(reserva.get_id()))
+            self.socios_tabela.setItem(i, 1, QTableWidgetItem(reserva.get_id_socio()))
+            self.socios_tabela.setItem(i, 2, QTableWidgetItem(reserva.get_nome()))
+            self.socios_tabela.setItem(i, 3, QTableWidgetItem(reserva.get_numero_sala()))
+            self.socios_tabela.setItem(i, 4, QTableWidgetItem(reserva.get_horario()))
+            
 
     def open_dialog(self):
         d = Dialog()
@@ -151,7 +197,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         indexes = self.socios_tabela.selectionModel().selectedRows()
         _ids = {self.socios_tabela.item(x.row(), 0).text() for x in sorted(indexes)}
         ids = "({})".format(",".join(_ids))
-        Reserva.remove(ids)
+        ReservaDAO().delete_reservas(ids)
         self.query_results()
 
 app = QtWidgets.QApplication(sys.argv)
