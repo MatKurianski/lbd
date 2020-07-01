@@ -39,7 +39,23 @@ class SocioDAO:
     def get_socios(self):
         mycursor.execute('SELECT idSocio, nome as id_socio FROM Socio')
         results = mycursor.fetchall()
-        return [Socio(str(x[0]),str(x[1])) for x in results]
+        return [Socio(x[0],x[1]) for x in results]
+
+class Sala:
+    def __init__(self, numero_sala):
+        self.set_numero_sala(numero_sala)
+
+    def get_numero_sala(self):
+        return self.numero_sala
+
+    def set_numero_sala(self, numero_sala):
+        self.numero_sala = str(numero_sala)
+
+class SalaDAO:
+    def get_numero_salas(self):
+        mycursor.execute('SELECT numero FROM Sala WHERE tipo_sala = 2')
+        salas = mycursor.fetchall()
+        return [Sala(sala[0]) for sala in salas]
 
 class Reserva:
     def __init__(self, id, id_socio, nome, numero_sala, horario):
