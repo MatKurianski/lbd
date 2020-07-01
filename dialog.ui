@@ -55,7 +55,7 @@
     <string>Cancelar</string>
    </property>
   </widget>
-  <widget class="QDateTimeEdit" name="dateTimeEdit">
+  <widget class="QDateTimeEdit" name="horario_edit">
    <property name="geometry">
     <rect>
      <x>120</x>
@@ -68,7 +68,7 @@
     <enum>QDateTimeEdit::DaySection</enum>
    </property>
    <property name="displayFormat">
-    <string>dd/MM/yyyy HH</string>
+    <string>dd/MM/yy HH</string>
    </property>
   </widget>
   <widget class="QLabel" name="label">
