@@ -95,7 +95,7 @@ class ReservaDAO:
 
     def get_by_nome_socio(self, name):
         mycursor.execute('SELECT r.idReserva, s.idSocio, s.nome , r.numero_sala , DATE_FORMAT(r.data_hora, \'%d/%m/%y %h:00\') as horario FROM Reserva r \
-                            INNER JOIN Socio s ON r.socio_id = s.idSocio WHERE s.nome LIKE "%{}%"'.format(name))
+                            INNER JOIN Socio s ON r.socio_id = s.idSocio WHERE s.nome LIKE "{}%"'.format(name))
         _reservas = mycursor.fetchall()
         reservas = []
         for _reserva in _reservas:
