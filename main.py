@@ -97,7 +97,7 @@ class Reserva:
 
 class ReservaDAO:
     def get_reservas(self):
-        mycursor.execute('SELECT r.idReserva, s.idSocio, s.nome , r.numero_sala , DATE_FORMAT(data_hora, \'%d/%m/%y %h:00\') as horario FROM Reserva r INNER JOIN Socio s ON r.socio_id = s.idSocio ORDER BY r.idReserva DESC LIMIT 100')
+        mycursor.execute('SELECT r.idReserva, s.idSocio, s.nome , r.numero_sala , DATE_FORMAT(data_hora, \'%d/%m/%y %H:00\') as horario FROM Reserva r INNER JOIN Socio s ON r.socio_id = s.idSocio ORDER BY r.idReserva DESC LIMIT 100')
         _reservas = mycursor.fetchall()
         reservas = []
         for _reserva in _reservas:
@@ -110,7 +110,7 @@ class ReservaDAO:
         mycursor.execute('DELETE from Reserva WHERE idReserva IN '+ids)
 
     def get_by_nome_socio(self, name):
-        mycursor.execute('SELECT r.idReserva, s.idSocio, s.nome , r.numero_sala , DATE_FORMAT(r.data_hora, \'%d/%m/%y %h:00\') as horario FROM Reserva r \
+        mycursor.execute('SELECT r.idReserva, s.idSocio, s.nome , r.numero_sala , DATE_FORMAT(r.data_hora, \'%d/%m/%y %H:00\') as horario FROM Reserva r \
                             INNER JOIN Socio s ON r.socio_id = s.idSocio WHERE s.nome LIKE "{}%"'.format(name))
         _reservas = mycursor.fetchall()
         reservas = []
