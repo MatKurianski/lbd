@@ -39,7 +39,23 @@ class SocioDAO:
     def get_socios(self):
         mycursor.execute('SELECT idSocio, nome as id_socio FROM Socio')
         results = mycursor.fetchall()
-        return [Socio(str(x[0]),str(x[1])) for x in results]
+        return [Socio(x[0],x[1]) for x in results]
+
+class Sala:
+    def __init__(self, numero_sala):
+        self.set_numero_sala(numero_sala)
+
+    def get_numero_sala(self):
+        return self.numero_sala
+
+    def set_numero_sala(self, numero_sala):
+        self.numero_sala = str(numero_sala)
+
+class SalaDAO:
+    def get_numero_salas(self):
+        mycursor.execute('SELECT numero FROM Sala WHERE tipo_sala = 2')
+        salas = mycursor.fetchall()
+        return [Sala(sala[0]) for sala in salas]
 
 class Reserva:
     def __init__(self, id, id_socio, nome, numero_sala, horario):
@@ -112,27 +128,41 @@ class Dialog(QDialog):
         self.reserva_button.clicked.connect(self.submit)
         self.cancela_button.clicked.connect(self.close)
 
-        self.selecionado_value = None
+        self.selecionado_socio = None
+        self.selecionada_sala = None
 
         _socios = SocioDAO().get_socios()
         socios = [(socio.get_id(),socio.get_nome()) for socio in _socios]
         self.socios = dict(socios)
-        self.id_lineedit.textChanged.connect(self.changed_ids)
+        self.id_lineedit.textChanged.connect(self.changed_socio)
+
+        _salas = SalaDAO().get_numero_salas()
+        salas = [sala.get_numero_sala() for sala in _salas]
+
+        if len(salas) > 0:
+            self.selecionada_sala = salas[0]
+
+        self.sala_combobox.addItems(salas)
+        self.sala_combobox.currentIndexChanged.connect(lambda x: print(x))
 
     def submit(self):
-        if self.selecionado_value is None:
+        if self.selecionado_socio is None:
             QMessageBox.about(self, "Usuário Inválido", "Esse usuário não existe")
+        elif self.selecionado_sala is None:
+            QMessageBox.about(self, "Sala Inválida", "Essa sala não existe")
         print('salve')
 
-    def changed_ids(self):
+    def changed_socio(self):
         id = self.id_lineedit.text()
         if id in self.socios:
-            self.selecionado_value = id
+            self.selecionado_socio = id
             self.selecionado.setText("Selecionado: {}".format(self.socios[id]))
         else:
-            self.selecionado_value = None
+            self.selecionado_socio = None
             self.selecionado.setText("Usuário não encontrado")
-        
+    
+    def changed_sala(self, sala):
+        self.selecionada_sala = sala
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
