@@ -241,10 +241,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def remove(self):
         indexes = self.socios_tabela.selectionModel().selectedRows()
-        _ids = {self.socios_tabela.item(x.row(), 0).text() for x in sorted(indexes)}
-        ids = "({})".format(",".join(_ids))
-        ReservaDAO().delete_reservas(ids)
-        self.query_results()
+        if len(indexes) > 0:
+          _ids = {self.socios_tabela.item(x.row(), 0).text() for x in sorted(indexes)}
+          ids = "({})".format(",".join(_ids))
+          ReservaDAO().delete_reservas(ids)
+          self.query_results()
 
 app = QtWidgets.QApplication(sys.argv)
 window = MainWindow()
