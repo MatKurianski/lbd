@@ -106,6 +106,12 @@ class ReservaDAO:
             reservas.append(reserva)
         return reservas
 
+    def get_reservas_by_sala(self, sala, dia):
+        mycursor.execute('SELECT DATE_FORMAT(r.data_hora, "%H") as hora FROM Reserva r WHERE r.numero_sala = {} AND DATE_FORMAT(r.data_hora, "%d/%m/%y") = "{}"'.format(sala, dia))
+        _horarios = mycursor.fetchall()
+        horarios = {str(int(horario[0])) for horario in _horarios}
+        return horarios
+
     def delete_reservas(self, ids):
         mycursor.execute('DELETE from Reserva WHERE idReserva IN '+ids)
 
@@ -121,8 +127,9 @@ class ReservaDAO:
         return reservas
 
     def add_reserva(self, sala, socio, horario):
+        query ='INSERT INTO Reserva (idReserva, numero_sala, socio_id, data_hora) VALUES (NULL, {}, {}, "{}")'.format(sala, socio, horario)
         try:
-            mycursor.execute('INSERT INTO Reserva (idReserva, numero_sala, socio_id, data_hora) VALUES (NULL, {}, {}, "{}")'.format(sala, socio, horario))
+            mycursor.execute(query)
             mydb.commit()
         except mysql.connector.Error as e:
             return False
@@ -133,26 +140,64 @@ class Dialog(QDialog):
     def __init__(self):
         super(Dialog, self).__init__()
         loadUi('dialog.ui', self)
-        self.horario_edit.setMinimumDate(QDate.currentDate().addDays(1))
+        self.data_edit.setMinimumDate(QDate.currentDate().addDays(1))
         self.reserva_button.clicked.connect(self.submit)
         self.cancela_button.clicked.connect(self.close)
 
         self.selecionado_socio = None
         self.selecionada_sala = None
+        self.selecionada_hora = None
 
         _socios = SocioDAO().get_socios()
         socios = [(socio.get_id(),socio.get_nome()) for socio in _socios]
         self.socios = dict(socios)
         self.id_lineedit.textChanged.connect(self.changed_socio)
+        self.sala_combobox.currentTextChanged.connect(self.changed_sala)
+        self.data_edit.clicked.connect(self.get_sala_reservas)
+        self.horario_edit.timeChanged.connect(self.check_hora)
+
+        self.reserva_button.setEnabled(False)
 
         _salas = SalaDAO().get_numero_salas()
         salas = [sala.get_numero_sala() for sala in _salas]
+
+        self.horarios_disp = {}
 
         if len(salas) > 0:
             self.selecionada_sala = salas[0]
 
         self.sala_combobox.addItems(salas)
+        self.setWindowTitle("Reserva de sala")
 
+    def check_reserva_legitima(self):
+        if self.selecionada_hora is not None and self.selecionado_socio is not None:
+            self.reserva_button.setEnabled(True)
+        else:
+            self.reserva_button.setEnabled(False)
+
+
+    def check_hora(self):
+        hora = str(self.horario_edit.time().toString('h'))
+        status = self.status
+        pal = status.palette()
+        if hora in self.horarios_disp:
+            pal.setColor(QtGui.QPalette.WindowText, QtGui.QColor('green'))
+            status.setText("Disponível!")
+            self.selecionada_hora = hora
+        else:
+            pal.setColor(QtGui.QPalette.WindowText, QtGui.QColor('red'))
+            status.setText("Não disponível!")
+            self.selecionada_hora = None
+        status.setPalette(pal)
+        self.check_reserva_legitima()
+
+    def get_sala_reservas(self):
+        dia = self.data_edit.selectedDate().toString("dd/MM/yy")
+        horarios_reservados = ReservaDAO().get_reservas_by_sala(self.selecionada_sala, dia)
+        todos_horarios = {str(x) for x in range(0,24)}
+        self.horarios_disp = todos_horarios - horarios_reservados
+        self.check_hora()
+    
     def submit(self):
         if self.selecionado_socio is None:
             QMessageBox.about(self, "Usuário Inválido", "Esse usuário não existe")
@@ -160,9 +205,14 @@ class Dialog(QDialog):
         elif self.selecionada_sala is None:
             QMessageBox.about(self, "Sala Inválida", "Essa sala não existe")
             return
-        _horario = self.horario_edit.dateTime()
-        horario = _horario.toString(self.horario_edit.displayFormat()) + ":00"
-        if ReservaDAO().add_reserva(self.selecionada_sala, self.selecionado_socio, horario):
+        elif self.selecionada_hora is None:
+            QMessageBox.about(self, "Horário ocupado", "Escolha outro horário")
+            return
+
+        dia = self.data_edit.selectedDate().toString("yy/MM/dd")
+        _horario = self.selecionada_hora
+        horario = _horario+":00"
+        if ReservaDAO().add_reserva(self.selecionada_sala, self.selecionado_socio, dia+" "+horario):
             self.done(0)
         else:
             QMessageBox.about(self, "Sala ocupada!", "Sala ocupada! Por favor, escolha outra sala ou outro horário")
@@ -175,10 +225,12 @@ class Dialog(QDialog):
         else:
             self.selecionado_socio = None
             self.selecionado.setText("Usuário não encontrado")
+        self.check_reserva_legitima()
     
     def changed_sala(self, sala):
         self.selecionada_sala = sala
-
+        self.get_sala_reservas()
+        
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
