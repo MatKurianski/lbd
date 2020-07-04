@@ -129,10 +129,10 @@
   <widget class="QCalendarWidget" name="data_edit">
    <property name="geometry">
     <rect>
-     <x>310</x>
+     <x>300</x>
      <y>20</y>
      <width>351</width>
-     <height>231</height>
+     <height>261</height>
     </rect>
    </property>
   </widget>

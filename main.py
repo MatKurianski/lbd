@@ -140,6 +140,7 @@ class Dialog(QDialog):
     def __init__(self):
         super(Dialog, self).__init__()
         loadUi('dialog.ui', self)
+        self.setFixedSize(self.size())
         self.data_edit.setMinimumDate(QDate.currentDate().addDays(1))
         self.reserva_button.clicked.connect(self.submit)
         self.cancela_button.clicked.connect(self.close)
