@@ -107,7 +107,7 @@ class ReservaDAO:
         return reservas
 
     def get_reservas_by_sala(self, sala, dia):
-        mycursor.execute('SELECT DATE_FORMAT(r.data_hora, "%H") as hora FROM Reserva r WHERE r.numero_sala = {} AND DATE_FORMAT(r.data_hora, "%d/%m/%y") = "{}"'.format(sala, dia))
+        mycursor.execute('SELECT DATE_FORMAT(r.data_hora, "%H") as hora FROM Reserva r WHERE r.numero_sala = {0} AND r.data_hora >= STR_TO_DATE("{1}", "%d/%m/%y") AND r.data_hora < DATE_ADD( STR_TO_DATE("{1}", "%d/%m/%y"), INTERVAL 1 DAY);'.format(sala, dia))
         _horarios = mycursor.fetchall()
         horarios = {str(int(horario[0])) for horario in _horarios}
         return horarios
