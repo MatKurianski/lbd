@@ -52,7 +52,7 @@ def random_with_N_digits(n):
   range_end = (10**n)-1
   return random.randint(range_start, range_end)
 
-# salas = SalaDAO().get_numero_salas()
+salas = SalaDAO().get_numero_salas()
 
 class ReservaDAO:
   def get_reservas_by_sala(self, sala, dia):
@@ -62,7 +62,6 @@ class ReservaDAO:
     horarios = {int(horario[0]) for horario in _horarios}
     return horarios
 
-sala = 3
 socios = SocioDAO().get_socios()
 date = get_random_date()
 
@@ -72,12 +71,14 @@ def chunks(lst, n):
 
 datas = [get_random_date() for x in range(1000)]
 
-for data in datas:
-  horarios_reservados = ReservaDAO().get_reservas_by_sala(sala, data)
-  horarios_disp = {x for x in range(0,24)} - horarios_reservados
+for sala in [random.choice(salas) for x in range(0,150)]:
+  print("Sala {} escolhida!\n".format(sala))
+  for data in datas:
+    horarios_reservados = ReservaDAO().get_reservas_by_sala(sala, data)
+    horarios_disp = {x for x in range(0,24)} - horarios_reservados
 
-  sql = "INSERT IGNORE INTO Reserva (socio_id, numero_sala, data_hora) VALUES (%s, %s, %s)"
-  _datas = [(random.choice(socios), sala, data + " {}:00:00".format(horario)) for horario in horarios_disp]
-  print("{} criada!".format(str(data)))
-  mycursor.executemany(sql, _datas)
-  mydb.commit()
+    sql = "INSERT IGNORE INTO Reserva (socio_id, numero_sala, data_hora) VALUES (%s, %s, %s)"
+    _datas = [(random.choice(socios), sala, data + " {}:00:00".format(horario)) for horario in horarios_disp]
+    print("{} criada!".format(str(data)))
+    mycursor.executemany(sql, _datas)
+    mydb.commit()
