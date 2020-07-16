@@ -145,7 +145,7 @@ class Dialog(QDialog):
         self.setFixedSize(self.size())
         self.data_edit.setMinimumDate(QDate.currentDate().addDays(1))
         self.reserva_button.clicked.connect(self.submit)
-        self.cancela_button.clicked.connect(self.close)
+        self.cancela_button.clicked.connect(self.close_window)
 
         self.selecionado_socio = None
         self.selecionada_sala = None
@@ -180,7 +180,11 @@ class Dialog(QDialog):
             self.reserva_button.setEnabled(True)
         else:
             self.reserva_button.setEnabled(False)
-
+    
+    def close_window(self):
+        if self.thread_socio is not None:
+            self.thread_socio.join()
+        self.close()
 
     def check_hora(self):
         hora = str(self.horario_edit.time().toString('h'))
