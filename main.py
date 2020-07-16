@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import QTableWidgetItem, QMessageBox, QDialog
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import QDate
 
+from threading import Timer
+
 import mysql.connector
 
 mydb = mysql.connector.connect(
@@ -36,10 +38,10 @@ class Socio:
         self.nome = str(nome)
 
 class SocioDAO:
-    def get_socios(self):
-        mycursor.execute('SELECT idSocio, nome as id_socio FROM Socio')
+    def get_socios_by_id(self, id):
+        mycursor.execute('SELECT nome FROM Socio WHERE idSocio = ' + str(id))
         results = mycursor.fetchall()
-        return [Socio(x[0],x[1]) for x in results]
+        return [Socio(None, x[0]) for x in results]
 
 class Sala:
     def __init__(self, numero_sala):
@@ -149,15 +151,18 @@ class Dialog(QDialog):
         self.selecionada_sala = None
         self.selecionada_hora = None
 
-        _socios = SocioDAO().get_socios()
-        socios = [(socio.get_id(),socio.get_nome()) for socio in _socios]
-        self.socios = dict(socios)
+        # _socios = SocioDAO().get_socios()
+        # socios = [(socio.get_id(),socio.get_nome()) for socio in _socios]
+        # self.socios = dict(socios)
+
+        self.id_lineedit.setValidator(QtGui.QIntValidator())
         self.id_lineedit.textChanged.connect(self.changed_socio)
         self.sala_combobox.currentTextChanged.connect(self.changed_sala)
         self.data_edit.clicked.connect(self.get_sala_reservas)
         self.horario_edit.timeChanged.connect(self.check_hora)
 
         self.reserva_button.setEnabled(False)
+        self.thread_socio = None
 
         _salas = SalaDAO().get_numero_salas()
         salas = [sala.get_numero_sala() for sala in _salas]
@@ -217,20 +222,32 @@ class Dialog(QDialog):
             self.done(0)
         else:
             QMessageBox.about(self, "Sala ocupada!", "Sala ocupada! Por favor, escolha outra sala ou outro horário")
-
+    
     def changed_socio(self):
         id = self.id_lineedit.text()
-        if id in self.socios:
-            self.selecionado_socio = id
-            self.selecionado.setText("Selecionado: {}".format(self.socios[id]))
-        else:
-            self.selecionado_socio = None
-            self.selecionado.setText("Usuário não encontrado")
+        self.selecionado.setText("")
+        self.selecionado_socio = None
+        if id: 
+          if self.thread_socio is not None and self.thread_socio.is_alive():
+              self.thread_socio.cancel()
+          self.thread_socio = Timer(0.7, self._change_socio, [id])
+          self.thread_socio.start()
         self.check_reserva_legitima()
     
     def changed_sala(self, sala):
         self.selecionada_sala = sala
         self.get_sala_reservas()
+
+    def _change_socio(self, id):
+        socio = SocioDAO().get_socios_by_id(id)
+        if len(socio) != 0:
+            nome = socio[0].get_nome()
+            self.selecionado_socio = id
+            self.selecionado.setText("Selecionado: {}".format(nome))
+        else:
+            self.selecionado_socio = None
+            self.selecionado.setText("Sócio não existe")
+        self.check_reserva_legitima()
         
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
